@@ -146,9 +146,17 @@ const UiController = (() => {
     els.outputTitle().textContent = outputTitle;
     els.outputContent().innerHTML = outputHtml;
 
-    // Keywords
-    els.keywordsContainer().innerHTML = keywords
-      .map(k => `<span class="tag">${k}</span>`)
+    // Keywords (ngrams shown in a different style, unigrams separately)
+    const kwContainer = els.keywordsContainer();
+    const allTerms = keywords || [];
+    kwContainer.innerHTML = allTerms
+      .map(k => {
+        const isPhrase = k.includes(' ');
+        const style = isPhrase
+          ? 'background:var(--color-accent-alt);'
+          : '';
+        return `<span class="tag" style="${style}" title="${isPhrase ? 'Key phrase' : 'Keyword'}">${k}</span>`;
+      })
       .join('');
 
     // Sections

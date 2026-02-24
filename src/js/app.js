@@ -184,7 +184,7 @@ const App = (() => {
 
   function init() {
     bindEvents();
-    console.info('[PaperLens] Initialized — v1.0.0 — all processing is local.');
+    console.info('[PaperLens] Initialized — v3.0.0 — all processing is local.');
   }
 
   // Auto-init when DOM is ready
