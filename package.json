@@ -1,6 +1,6 @@
 {
   "name": "paperlens",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Offline AI research paper simplifier — runs entirely in the browser with no API or backend.",
   "main": "index.html",
   "scripts": {
