@@ -1,0 +1,69 @@
+{
+  "model": "MMR (lambda=0.6)",
+  "rouge1": 0.4216,
+  "rouge2": 0.1366,
+  "rougeL": 0.213,
+  "composite": 0.2697,
+  "n_sentences": 6,
+  "lambda": 0.6,
+  "w_tfidf": 0.5,
+  "w_pos": 0.3,
+  "w_len": 0.1,
+  "w_kw": 0.1,
+  "all_models": {
+    "TF-IDF": {
+      "rouge1": 0.3904,
+      "rouge2": 0.1307,
+      "rougeL": 0.2112,
+      "composite": 0.2547
+    },
+    "TextRank": {
+      "rouge1": 0.3951,
+      "rouge2": 0.1316,
+      "rougeL": 0.2124,
+      "composite": 0.2572
+    },
+    "LSA": {
+      "rouge1": 0.2715,
+      "rouge2": 0.0717,
+      "rougeL": 0.1603,
+      "composite": 0.1738
+    },
+    "LexRank": {
+      "rouge1": 0.3797,
+      "rouge2": 0.1241,
+      "rougeL": 0.209,
+      "composite": 0.2476
+    },
+    "Weighted": {
+      "rouge1": 0.3997,
+      "rouge2": 0.1308,
+      "rougeL": 0.2129,
+      "composite": 0.2589
+    },
+    "BART (Abstractive)": {
+      "rouge1": 0.3217,
+      "rouge2": 0.0944,
+      "rougeL": 0.1851,
+      "composite": 0.208
+    },
+    "Weighted (Tuned)": {
+      "rouge1": 0.4056,
+      "rouge2": 0.1347,
+      "rougeL": 0.2145,
+      "composite": 0.263
+    },
+    "Weighted (Tuned n=6)": {
+      "rouge1": 0.4112,
+      "rouge2": 0.138,
+      "rougeL": 0.214,
+      "composite": 0.2663
+    },
+    "MMR (lambda=0.6)": {
+      "rouge1": 0.4216,
+      "rouge2": 0.1366,
+      "rougeL": 0.213,
+      "composite": 0.2697
+    }
+  }
+}
