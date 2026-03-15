@@ -4,7 +4,8 @@
 .DS_Store
 Thumbs.db
 desktop.ini
-
+__pycache__/
+*.pyc
 # Editor directories
 .vscode/
 .idea/
@@ -27,3 +28,7 @@ build/
 
 # Logs
 *.log
+venv/
+dataset/*.pkl
+models/*.pkl
+!outputs/
