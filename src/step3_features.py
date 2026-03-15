@@ -38,7 +38,10 @@ X_test_bow  = bow.transform(test_texts)
 print(f"  Bag of Words   - vocab: {len(bow.vocabulary_):,}  shape: {X_train_bow.shape}")
 
 # 2. TF-IDF Unigrams
-tfidf = TfidfVectorizer(max_features=20000, sublinear_tf=True)
+tfidf = TfidfVectorizer(max_features=50000, sublinear_tf=True, 
+                        min_df=2, max_df=0.95, ngram_range=(1,2))
+
+
 X_train_tfidf = tfidf.fit_transform(train_texts)
 X_test_tfidf  = tfidf.transform(test_texts)
 print(f"  TF-IDF         - vocab: {len(tfidf.vocabulary_):,}  shape: {X_train_tfidf.shape}")

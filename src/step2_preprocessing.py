@@ -40,8 +40,8 @@ print("STEP 2: TEXT PREPROCESSING")
 print("=" * 50)
 
 print("\nLoading dataset...")
-train_data = fetch_20newsgroups(subset='train', remove=('headers', 'footers', 'quotes'))
-test_data  = fetch_20newsgroups(subset='test',  remove=('headers', 'footers', 'quotes'))
+train_data = fetch_20newsgroups(subset='train')
+test_data  = fetch_20newsgroups(subset='test')
 
 # ── Preprocess ────────────────────────────────────────────────
 print("\nPreprocessing training data...")
