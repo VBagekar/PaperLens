@@ -1,0 +1,7 @@
+{
+  "model": "sshleifer/distilbart-cnn-12-6",
+  "rouge1": 0.3217,
+  "rouge2": 0.0944,
+  "rougeL": 0.1851,
+  "n_eval": 100
+}
