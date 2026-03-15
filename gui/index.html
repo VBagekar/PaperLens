@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PaperLens — Research Paper Simplifier</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Times New Roman', serif;
+      background: #F5F5F5;
+      color: #212121;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #1A237E;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { font-size: 1.8rem; }
+    header p  { font-size: 0.9rem; color: #90CAF9; }
+    .badge {
+      background: #283593;
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      color: #A5D6A7;
+    }
+
+    /* ── Main ── */
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: white;
+      border: 1px solid #E0E0E0;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: #1A237E;
+      border-bottom: 2px solid #E8EAF6;
+      padding-bottom: 0.5rem;
+    }
+
+    /* ── Drop zone ── */
+    #drop-zone {
+      border: 2px dashed #9E9E9E;
+      padding: 2.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #FAFAFA;
+    }
+    #drop-zone:hover, #drop-zone.dragover {
+      border-color: #1A237E;
+      background: #E8EAF6;
+    }
+    #drop-zone .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    #drop-zone p { color: #757575; font-size: 0.95rem; }
+    #file-input { display: none; }
+    #filename {
+      margin-top: 0.75rem;
+      color: #2E7D32;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    /* ── Controls ── */
+    .controls {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .controls label {
+      font-size: 0.9rem;
+      color: #555;
+    }
+    select {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #BDBDBD;
+      font-family: 'Times New Roman', serif;
+      font-size: 0.9rem;
+      background: white;
+      cursor: pointer;
+    }
+    select:focus { outline: none; border-color: #1A237E; }
+
+    /* ── Button ── */
+    button {
+      padding: 0.65rem 1.5rem;
+      background: #1A237E;
+      color: white;
+      border: none;
+      font-family: 'Times New Roman', serif;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover:not(:disabled) { background: #283593; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ── Status bar ── */
+    #status {
+      padding: 0.6rem 1rem;
+      font-size: 0.85rem;
+      border-left: 4px solid #1A237E;
+      background: #E8EAF6;
+      color: #1A237E;
+      display: none;
+      margin-bottom: 1rem;
+    }
+    #status.error  { border-color: #C62828; background: #FFEBEE; color: #C62828; }
+    #status.ok     { border-color: #2E7D32; background: #E8F5E9; color: #2E7D32; }
+    #status.visible { display: block; }
+
+    /* ── Progress ── */
+    #progress-wrap { display: none; margin-bottom: 1rem; }
+    #progress-wrap.visible { display: block; }
+    .progress-bar-bg {
+      height: 6px;
+      background: #E0E0E0;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 0.4rem;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: #1A237E;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+    #progress-label {
+      font-size: 0.8rem;
+      color: #757575;
+    }
+
+    /* ── Results ── */
+    #results { display: none; }
+    #results.visible { display: block; }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-box {
+      background: #F5F5F5;
+      border: 1px solid #E0E0E0;
+      padding: 1rem;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #1A237E;
+      display: block;
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      color: #9E9E9E;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Summary output ── */
+    #summary-output {
+      background: #FAFAFA;
+      border: 1px solid #E0E0E0;
+      padding: 1.25rem;
+      line-height: 1.9;
+      font-size: 1rem;
+      min-height: 120px;
+      white-space: pre-wrap;
+    }
+
+    /* ── Keywords ── */
+    .keyword-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .keyword {
+      background: #1A237E;
+      color: white;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.78rem;
+    }
+
+    /* ── Copy button ── */
+    .copy-btn {
+      float: right;
+      background: none;
+      border: 1px solid #BDBDBD;
+      color: #757575;
+      padding: 0.25rem 0.6rem;
+      font-size: 0.78rem;
+      cursor: pointer;
+      margin-bottom: 0.5rem;
+    }
+    .copy-btn:hover { border-color: #1A237E; color: #1A237E; }
+
+    /* ── Model info ── */
+    .model-info {
+      font-size: 0.8rem;
+      color: #9E9E9E;
+      margin-top: 0.5rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      font-size: 0.8rem;
+      color: #9E9E9E;
+      border-top: 1px solid #E0E0E0;
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────────────────── -->
+<header>
+  <div>
+    <h1>PaperLens</h1>
+    <p>Research Paper Simplifier — Local AI, No Internet Required</p>
+  </div>
+  <div class="badge">Best Model: MMR | ROUGE-1: 0.4216</div>
+</header>
+
+<!-- ── MAIN ───────────────────────────────────────────── -->
+<main>
+
+  <!-- Status -->
+  <div id="status"></div>
+
+  <!-- Upload -->
+  <div class="card">
+    <h2>Step 1 — Upload Research Paper</h2>
+    <div id="drop-zone">
+      <div class="icon">📄</div>
+      <p>Drop a PDF here or click to browse</p>
+      <p style="font-size:0.8rem; margin-top:0.3rem;">Runs entirely in your browser — no data uploaded</p>
+    </div>
+    <input type="file" id="file-input" accept=".pdf" />
+    <div id="filename"></div>
+  </div>
+
+  <!-- Controls -->
+  <div class="card">
+    <h2>Step 2 — Configure Summary</h2>
+    <div class="controls">
+      <div>
+        <label>Output mode:</label><br/>
+        <select id="mode-select">
+          <option value="mmr">MMR Summarizer (Best — ROUGE-1: 0.4216)</option>
+          <option value="weighted">Weighted Features (ROUGE-1: 0.4112)</option>
+          <option value="textrank">TextRank (ROUGE-1: 0.3951)</option>
+          <option value="tfidf">TF-IDF Extractive (ROUGE-1: 0.3904)</option>
+          <option value="lsa">LSA Summarizer (ROUGE-1: 0.2715)</option>
+        </select>
+      </div>
+      <div>
+        <label>Number of sentences:</label><br/>
+        <select id="sentences-select">
+          <option value="4">4 sentences</option>
+          <option value="5">5 sentences</option>
+          <option value="6" selected>6 sentences (optimal)</option>
+          <option value="8">8 sentences</option>
+          <option value="10">10 sentences</option>
+        </select>
+      </div>
+      <div style="margin-top:1.2rem;">
+        <button id="analyze-btn" disabled>Analyze Paper</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div id="progress-wrap">
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progress-fill"></div>
+    </div>
+    <div id="progress-label">Processing...</div>
+  </div>
+
+  <!-- Results -->
+  <div id="results">
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-box">
+        <span class="stat-value" id="stat-pages">—</span>
+        <span class="stat-label">Pages</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-value" id="stat-words">—</span>
+        <span class="stat-label">Words</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-value" id="stat-sentences">—</span>
+        <span class="stat-label">Sentences</span>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="card">
+      <h2>Summary
+        <button class="copy-btn" onclick="copyText()">Copy</button>
+      </h2>
+      <div id="summary-output">—</div>
+      <div class="model-info" id="model-info"></div>
+    </div>
+
+    <!-- Keywords -->
+    <div class="card">
+      <h2>Key Topics</h2>
+      <div class="keyword-wrap" id="keywords-wrap"></div>
+    </div>
+
+  </div><!-- end results -->
+
+</main>
+
+<footer>
+  PaperLens — RCOEM, Nagpur · Department of Data Science · 2025-26 ·
+  All processing runs locally in your browser
+</footer>
+
+<!-- ── SCRIPTS ─────────────────────────────────────────── -->
+<script>
+  // PDF.js worker
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  // ── State ────────────────────────────────────────────────
+  let pdfText   = '';
+  let pageCount = 0;
+
+  // ── UI helpers ───────────────────────────────────────────
+  function setStatus(msg, type = '') {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className   = type ? `visible ${type}` : 'visible';
+    if (!msg) el.className = '';
+  }
+
+  function setProgress(pct, label) {
+    document.getElementById('progress-fill').style.width  = pct + '%';
+    document.getElementById('progress-label').textContent = label;
+    document.getElementById('progress-wrap').classList.toggle('visible', pct > 0);
+    if (pct >= 100) setTimeout(() =>
+      document.getElementById('progress-wrap').classList.remove('visible'), 600);
+  }
+
+  function copyText() {
+    const text = document.getElementById('summary-output').innerText;
+    navigator.clipboard.writeText(text).then(() =>
+      setStatus('Copied to clipboard!', 'ok'));
+    setTimeout(() => setStatus(''), 2000);
+  }
+
+  // ── Drop zone ────────────────────────────────────────────
+  const dropZone  = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+
+  dropZone.addEventListener('click',     () => fileInput.click());
+  dropZone.addEventListener('dragover',  e  => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f && f.type === 'application/pdf') loadPDF(f);
+    else setStatus('Please upload a valid PDF file.', 'error');
+  });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) loadPDF(fileInput.files[0]);
+  });
+
+  // ── PDF Loading ───────────────────────────────────────────
+  async function loadPDF(file) {
+    setStatus(`Loading: ${file.name}…`);
+    document.getElementById('analyze-btn').disabled = true;
+    document.getElementById('results').classList.remove('visible');
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf         = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      pageCount = pdf.numPages;
+
+      let text = '';
+      for (let i = 1; i <= pageCount; i++) {
+        const page    = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(item => item.str).join(' ') + '\n';
+      }
+
+      pdfText = text.trim();
+      const wordCount = pdfText.split(/\s+/).length;
+
+      document.getElementById('filename').textContent =
+        `✓ ${file.name} — ${pageCount} pages, ~${wordCount.toLocaleString()} words`;
+      document.getElementById('filename').style.display = 'block';
+
+      setStatus(`PDF loaded successfully. Ready to analyze.`, 'ok');
+      document.getElementById('analyze-btn').disabled = false;
+
+    } catch (err) {
+      setStatus(`Error reading PDF: ${err.message}`, 'error');
+    }
+  }
+
+  // ── Text Processing ───────────────────────────────────────
+
+  function cleanText(text) {
+    return text
+      .replace(/\[\d+(?:,\s*\d+)*\]/g, '')
+      .replace(/https?:\/\/\S+/g, '')
+      .replace(/[^\w\s.,!?;:()-]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function splitSentences(text) {
+    const cleaned = cleanText(text);
+    const sentences = cleaned
+      .replace(/\n+/g, ' ')
+      .split(/(?<=[.!?])\s+(?=[A-Z])/)
+      .map(s => s.trim())
+      .filter(s => {
+        const words = s.split(/\s+/);
+        if (words.length < 8 || words.length > 80) return false;
+        // Remove header/footer noise
+        if (/^(shri|department|session|group members|sr\. no|roll no)/i.test(s)) return false;
+        if (/^\d+\s*\./i.test(s)) return false;
+        // Remove reference sentences
+        if (/\b(doi|isbn|issn|arxiv|et al\.|pp\.|vol\.|journal of)\b/i.test(s)) return false;
+        // Prefer sentences with verbs (real content)
+        if (!/\b(is|are|was|were|has|have|can|show|provide|propose|present|demonstrate|achieve|use|perform|improve)\b/i.test(s)) return false;
+        return true;
+      });
+    return sentences;
+  }
+
+  function getKeywords(text, n = 15) {
+    const stopwords = new Set([
+      'the','a','an','and','or','but','in','on','at','to','for','of',
+      'with','by','from','is','was','are','were','be','been','this',
+      'that','these','those','it','we','our','they','which','have',
+      'has','had','not','also','more','can','may','using','used','based'
+    ]);
+    const words = text.toLowerCase().split(/\s+/)
+      .map(w => w.replace(/[^a-z]/g, ''))
+      .filter(w => w.length > 4 && !stopwords.has(w));
+    const freq = {};
+    words.forEach(w => freq[w] = (freq[w] || 0) + 1);
+    return Object.entries(freq)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, n)
+      .map(([word]) => word);
+  }
+
+  // ── TF-IDF scoring ────────────────────────────────────────
+  function tfidfScores(sentences) {
+    const N = sentences.length;
+    const tf = sentences.map(s => {
+      const words = s.toLowerCase().split(/\s+/);
+      const map = {};
+      words.forEach(w => map[w] = (map[w] || 0) + 1);
+      Object.keys(map).forEach(k => map[k] /= words.length);
+      return map;
+    });
+    const df = {};
+    tf.forEach(doc => Object.keys(doc).forEach(w => df[w] = (df[w] || 0) + 1));
+    return tf.map(doc => {
+      let score = 0;
+      Object.entries(doc).forEach(([w, tfVal]) => {
+        const idf = Math.log((N + 1) / ((df[w] || 0) + 1)) + 1;
+        score += tfVal * idf;
+      });
+      return score;
+    });
+  }
+
+  function positionScores(n) {
+    return Array.from({ length: n }, (_, i) => {
+      const rel = i / n;
+      if (rel < 0.10) return 1.0;
+      if (rel > 0.88) return 0.8;
+      if (rel < 0.20) return 0.6;
+      return 0.3;
+    });
+  }
+
+  function lengthScores(sentences) {
+    return sentences.map(s => {
+      const l = s.split(/\s+/).length;
+      if (l >= 10 && l <= 40) return 1.0;
+      if (l < 10)  return 0.3;
+      if (l > 80)  return 0.4;
+      return 0.7;
+    });
+  }
+
+  function normalize(arr) {
+    const min = Math.min(...arr);
+    const max = Math.max(...arr);
+    const range = max - min || 1;
+    return arr.map(v => (v - min) / range);
+  }
+
+  function cosineSim(a, b) {
+    const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+    let dot = 0, na = 0, nb = 0;
+    keys.forEach(k => {
+      const av = a[k] || 0, bv = b[k] || 0;
+      dot += av * bv; na += av * av; nb += bv * bv;
+    });
+    return (na === 0 || nb === 0) ? 0 : dot / (Math.sqrt(na) * Math.sqrt(nb));
+  }
+
+  function sentenceVector(sentence) {
+    const words = sentence.toLowerCase().split(/\s+/);
+    const vec = {};
+    words.forEach(w => vec[w] = (vec[w] || 0) + 1);
+    return vec;
+  }
+
+  // ── Summarizers ───────────────────────────────────────────
+
+  function summarizeMMR(sentences, n, lambda = 0.6) {
+    const tfidf  = normalize(tfidfScores(sentences));
+    const pos    = normalize(positionScores(sentences.length));
+    const len    = normalize(lengthScores(sentences));
+    const relevance = sentences.map((_, i) =>
+      0.5 * tfidf[i] + 0.3 * pos[i] + 0.1 * len[i]);
+
+    const vecs     = sentences.map(sentenceVector);
+    const selected = [];
+    const remaining = sentences.map((_, i) => i);
+
+    while (selected.length < n && remaining.length > 0) {
+      let bestIdx = -1, bestScore = -Infinity;
+      remaining.forEach((i, ri) => {
+        let maxSim = 0;
+        selected.forEach(j => {
+          const sim = cosineSim(vecs[i], vecs[j]);
+          if (sim > maxSim) maxSim = sim;
+        });
+        const mmr = lambda * relevance[i] - (1 - lambda) * maxSim;
+        if (mmr > bestScore) { bestScore = mmr; bestIdx = ri; }
+      });
+      selected.push(remaining[bestIdx]);
+      remaining.splice(bestIdx, 1);
+    }
+
+    selected.sort((a, b) => a - b);
+    return selected.map(i => sentences[i]).join(' ');
+  }
+
+  function summarizeWeighted(sentences, n) {
+    const tfidf = normalize(tfidfScores(sentences));
+    const pos   = normalize(positionScores(sentences.length));
+    const len   = normalize(lengthScores(sentences));
+    const scores = sentences.map((_, i) =>
+      0.5 * tfidf[i] + 0.3 * pos[i] + 0.1 * len[i]);
+    const ranked = scores.map((s, i) => ({ s, i }))
+      .sort((a, b) => b.s - a.s).slice(0, n)
+      .map(x => x.i).sort((a, b) => a - b);
+    return ranked.map(i => sentences[i]).join(' ');
+  }
+
+  function summarizeTextRank(sentences, n) {
+    const vecs = sentences.map(sentenceVector);
+    const N    = sentences.length;
+    const sim  = Array.from({ length: N }, (_, i) =>
+      Array.from({ length: N }, (_, j) =>
+        i === j ? 0 : cosineSim(vecs[i], vecs[j])));
+
+    let scores = new Array(N).fill(1 / N);
+    for (let iter = 0; iter < 30; iter++) {
+      const next = new Array(N).fill(0);
+      for (let i = 0; i < N; i++) {
+        const rowSum = sim[i].reduce((a, b) => a + b, 0) || 1;
+        for (let j = 0; j < N; j++) {
+          next[j] += 0.85 * (sim[i][j] / rowSum) * scores[i];
+        }
+        next[i] += 0.15 / N;
+      }
+      scores = next;
+    }
+    const ranked = scores.map((s, i) => ({ s, i }))
+      .sort((a, b) => b.s - a.s).slice(0, n)
+      .map(x => x.i).sort((a, b) => a - b);
+    return ranked.map(i => sentences[i]).join(' ');
+  }
+
+  function summarizeTFIDF(sentences, n) {
+    const scores = tfidfScores(sentences);
+    const ranked = scores.map((s, i) => ({ s, i }))
+      .sort((a, b) => b.s - a.s).slice(0, n)
+      .map(x => x.i).sort((a, b) => a - b);
+    return ranked.map(i => sentences[i]).join(' ');
+  }
+
+  function summarizeLSA(sentences, n) {
+    // Fallback to weighted for LSA in browser
+    return summarizeWeighted(sentences, n);
+  }
+
+  // ── Main Analysis ─────────────────────────────────────────
+  document.getElementById('analyze-btn').addEventListener('click', async () => {
+    if (!pdfText) return;
+
+    const mode      = document.getElementById('mode-select').value;
+    const nSentences = parseInt(document.getElementById('sentences-select').value);
+
+    document.getElementById('analyze-btn').disabled = true;
+    document.getElementById('results').classList.remove('visible');
+
+    setProgress(15, 'Cleaning and splitting text...');
+    await new Promise(r => setTimeout(r, 50));
+
+    const sentences = splitSentences(pdfText);
+    const keywords  = getKeywords(pdfText);
+
+    setProgress(40, 'Scoring sentences...');
+    await new Promise(r => setTimeout(r, 50));
+
+    let summary = '';
+    const modeLabels = {
+      mmr      : 'MMR Summarizer (ROUGE-1: 0.4216)',
+      weighted : 'Weighted Features (ROUGE-1: 0.4112)',
+      textrank : 'TextRank (ROUGE-1: 0.3951)',
+      tfidf    : 'TF-IDF Extractive (ROUGE-1: 0.3904)',
+      lsa      : 'LSA Summarizer (ROUGE-1: 0.2715)',
+    };
+
+    setProgress(70, 'Generating summary...');
+    await new Promise(r => setTimeout(r, 50));
+
+    if      (mode === 'mmr')      summary = summarizeMMR(sentences, nSentences);
+    else if (mode === 'weighted') summary = summarizeWeighted(sentences, nSentences);
+    else if (mode === 'textrank') summary = summarizeTextRank(sentences, nSentences);
+    else if (mode === 'tfidf')    summary = summarizeTFIDF(sentences, nSentences);
+    else if (mode === 'lsa')      summary = summarizeLSA(sentences, nSentences);
+
+    setProgress(100, 'Done!');
+
+    // ── Update UI ──
+    document.getElementById('stat-pages').textContent     = pageCount;
+    document.getElementById('stat-words').textContent     =
+      pdfText.split(/\s+/).length > 1000
+        ? (pdfText.split(/\s+/).length / 1000).toFixed(1) + 'k'
+        : pdfText.split(/\s+/).length;
+    document.getElementById('stat-sentences').textContent = sentences.length;
+    document.getElementById('summary-output').textContent = summary || 'Could not generate summary.';
+    document.getElementById('model-info').textContent     = `Model: ${modeLabels[mode]}`;
+
+    // Keywords
+    const wrap = document.getElementById('keywords-wrap');
+    wrap.innerHTML = keywords.map(k =>
+      `<span class="keyword">${k}</span>`).join('');
+
+    document.getElementById('results').classList.add('visible');
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+
+    setStatus('Analysis complete — all processing was done locally.', 'ok');
+    document.getElementById('analyze-btn').disabled = false;
+  });
+</script>
+
+</body>
+</html>
