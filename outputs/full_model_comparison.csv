@@ -1,0 +1,10 @@
+Model,Features,Accuracy,F1 Macro,Precision,Recall
+Naive Bayes,TF-IDF,83.7,82.95,83.91,82.85
+Logistic Regression,TF-IDF,84.89,84.31,84.86,84.19
+Linear SVM,TF-IDF,86.05,85.38,85.96,85.32
+Random Forest,TF-IDF,77.75,76.62,78.34,76.58
+k-NN,TF-IDF,71.12,71.09,71.9,70.86
+LR + Word2Vec,Word2Vec,71.3,70.45,70.73,70.4
+SVM + Word2Vec,Word2Vec,71.28,70.5,71.03,70.39
+RF + Word2Vec,Word2Vec,66.36,64.87,66.29,65.19
+kNN + Word2Vec,Word2Vec,61.95,60.96,61.94,60.94
