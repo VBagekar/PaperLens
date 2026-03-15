@@ -1,8 +1,0 @@
-{
-  "model": "DistilBERT",
-  "accuracy": 85.0,
-  "f1_macro": 84.46,
-  "precision": 84.96,
-  "recall": 84.35,
-  "epochs": 5
-}

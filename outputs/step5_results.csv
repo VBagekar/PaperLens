@@ -1,6 +1,0 @@
-Model,Accuracy,F1 Macro,Precision,Recall,Time(s)
-Naive Bayes,83.7,82.95,83.91,82.85,0.04
-Logistic Regression,84.89,84.31,84.86,84.19,8.92
-Linear SVM,86.05,85.38,85.96,85.32,0.59
-Random Forest,77.75,76.62,78.34,76.58,7.29
-k-NN,71.12,71.09,71.9,70.86,0.0
